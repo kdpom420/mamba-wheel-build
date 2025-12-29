@@ -12,23 +12,26 @@ jobs:
       - name: Create wheels directory
         run: mkdir -p $GITHUB_WORKSPACE/wheels
 
-      # 2️⃣ 실제 존재하는 prebuilt wheel 다운로드 (v2.2.6.post3, cp39 for Python 3.9)
+      # 2️⃣ 실제 존재하는 prebuilt wheel 다운로드 (Python 3.9 cp39 호환)
       - name: Download mamba-ssm and causal-conv1d wheels
         run: |
-          # mamba_ssm wheel (cu118 + torch2.4, A100 잘 동작, GLIBC ubuntu-22 수준)
-          wget -O $GITHUB_WORKSPACE/wheels/mamba_ssm.whl https://github.com/state-spaces/mamba/releases/download/v2.2.6.post3/mamba_ssm-2.2.6.post3+cu118torch2.4cxx11abiFALSE-cp39-cp39-linux_x86_64.whl
+          # mamba_ssm: cp39, cu11, torch2.4, cxx11abiTRUE (A100 호환 최고)
+          wget -O $GITHUB_WORKSPACE/wheels/mamba_ssm-2.2.6.post3-cp39.whl \
+            https://github.com/state-spaces/mamba/releases/download/v2.2.6.post3/mamba_ssm-2.2.6.post3+cu11torch2.4cxx11abiTRUE-cp39-cp39-linux_x86_64.whl
           
-          # causal-conv1d wheel (최신 릴리스에서 별도 필요 없지만 안전하게 추가, 호환 버전)
-          wget -O $GITHUB_WORKSPACE/wheels/causal_conv1d.whl https://github.com/Dao-AILab/causal-conv1d/releases/download/v1.4.0/causal_conv1d-1.4.0+cu118torch2.1cxx11abiFALSE-cp39-cp39-linux_x86_64.whl
+          # causal-conv1d: cp39, cu11, torch2.4 (의존성, optional but 추천)
+          wget -O $GITHUB_WORKSPACE/wheels/causal_conv1d-1.5.4-cp39.whl \
+            https://github.com/Dao-AILab/causal-conv1d/releases/download/v1.5.4/causal_conv1d-1.5.4+cu11torch2.4cxx11abiTRUE-cp39-cp39-linux_x86_64.whl
           
-          # 다운로드 확인
-          echo "=== Downloaded files ==="
-          ls -la $GITHUB_WORKSPACE/wheels
+          # 다운로드 성공 확인
+          echo "=== Downloaded wheels ==="
+          ls -lh $GITHUB_WORKSPACE/wheels
+          sha256sum $GITHUB_WORKSPACE/wheels/*.whl  # checksum 확인용
 
-      # 3️⃣ Artifact 업로드 (파일 없으면 오류)
+      # 3️⃣ Artifact 업로드
       - name: Upload wheels artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mamba-ssm-offline-wheels
+          name: mamba-ssm-offline-wheels-cp39
           path: $GITHUB_WORKSPACE/wheels/*.whl
           if-no-files-found: error
