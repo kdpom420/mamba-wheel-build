@@ -1,79 +1,47 @@
-name: Build mamba-ssm CPU Wheel (Mamba-2 포함)
+name: Download mamba-ssm Prebuilt Wheel
 
 on:
   workflow_dispatch:  # 수동 실행
 
 jobs:
-  build-wheel:
+  download-wheel:
     runs-on: ubuntu-22.04
 
-    env:
-      MAMBA_FORCE_BUILD: 1       # prebuilt 무시하고 소스 빌드 강제
-      MAMBA_SKIP_CUDA_BUILD: 1   # CPU-only 빌드 → GLIBC 문제 거의 없음
-      PIP_NO_BUILD_ISOLATION: 1
-
     steps:
-      # 1️⃣ 공식 state-spaces/mamba 리포지토리 체크아웃
-      - name: Checkout state-spaces/mamba
-        uses: actions/checkout@v4
-        with:
-          repository: state-spaces/mamba
-          ref: main
-          submodules: recursive
-
-      # 2️⃣ 디버깅: 루트 구조 + mamba_ssm 폴더 확인
-      - name: Show repo structure
+      # 1️⃣ 작업 디렉토리 설정
+      - name: Set up workspace
         run: |
-          echo "=== Root directory ==="
-          ls -la
-          echo "=== Check mamba_ssm folder ==="
-          ls -la mamba_ssm || echo "mamba_ssm not found!"
+          mkdir -p $GITHUB_WORKSPACE/wheels
 
-      # 3️⃣ Python 3.9 설정
-      - name: Setup Python 3.9
+      # 2️⃣ Python 설정 (임시 env 위해)
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
 
-      # 4️⃣ pip 업그레이드
-      - name: Upgrade pip and tools
+      # 3️⃣ mamba-ssm 설치 (prebuilt wheel 자동 다운로드)
+      - name: Install mamba-ssm (downloads prebuilt wheel)
         run: |
-          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install --no-deps --target $GITHUB_WORKSPACE/wheels mamba-ssm
+          python -m pip install --no-deps --target $GITHUB_WORKSPACE/wheels causal-conv1d  # 의존성
 
-      # 5️⃣ 빌드 의존성 (CPU-only torch)
-      - name: Install build dependencies
+      # 4️⃣ 다운로드된 wheel 확인 및 복사
+      - name: Find and copy wheels
         run: |
-          python -m pip install numpy
-          python -m pip install torch==2.1.2+cpu torchvision==0.16.2+cpu torchaudio==2.1.2+cpu --index-url https://download.pytorch.org/whl/cpu
+          echo "=== Downloaded wheels in pip cache ==="
+          ls -la ~/.cache/pip/wheels/*.whl || echo "No wheels in cache"
+          
+          # pip cache에서 wheel 복사 (prebuilt가 cache에 저장됨)
+          cp ~/.cache/pip/wheels/mamba_ssm*.whl $GITHUB_WORKSPACE/wheels/ || echo "mamba_ssm wheel not found"
+          cp ~/.cache/pip/wheels/causal_conv1d*.whl $GITHUB_WORKSPACE/wheels/ || echo "causal_conv1d wheel not found"
+          
+          echo "=== Final wheels directory ==="
+          ls -la $GITHUB_WORKSPACE/wheels
 
-      # 6️⃣ wheel 빌드 (루트에서! cd 필요 없음)
-      - name: Build mamba-ssm wheel
-        run: |
-          mkdir -p $GITHUB_WORKSPACE/dist
-
-          # pyproject.toml 확인 (빌드 파일 존재 여부)
-          if [ ! -f "pyproject.toml" ]; then
-            echo "Error: pyproject.toml not found!"
-            ls -la
-            exit 1
-          fi
-
-          echo "Building from root (pyproject.toml found)..."
-          python -m pip wheel . \
-            --no-build-isolation \
-            --no-cache-dir \
-            --wheel-dir $GITHUB_WORKSPACE/dist
-
-      # 7️⃣ 빌드된 wheel 확인
-      - name: List built wheels
-        run: |
-          echo "=== Built wheels ==="
-          ls -la $GITHUB_WORKSPACE/dist
-
-      # 8️⃣ Artifact 업로드
-      - name: Upload wheel artifact
+      # 5️⃣ Artifact 업로드 (다운로드 가능)
+      - name: Upload wheels artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mamba-ssm-cpu-wheel
-          path: $GITHUB_WORKSPACE/dist/*.whl
+          name: mamba-ssm-wheels
+          path: $GITHUB_WORKSPACE/wheels/*.whl
           if-no-files-found: error
