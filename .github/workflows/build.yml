@@ -1,4 +1,4 @@
-name: Download Mamba-2 Minimal (Pure PyTorch, Offline Install)
+name: Download Mamba-2 Minimal Pure PyTorch (Offline Install)
 
 on:
   workflow_dispatch:  # 수동 실행
@@ -16,12 +16,14 @@ jobs:
           wget -O $GITHUB_WORKSPACE/mamba2_minimal/mamba2-minimal.zip \
             https://github.com/tommyip/mamba2-minimal/archive/refs/heads/main.zip
           
-          echo "=== Downloaded file ==="
-          ls -la $GITHUB_WORKSPACE/mamba2_minimal
+          unzip $GITHUB_WORKSPACE/mamba2_minimal/mamba2-minimal.zip -d $GITHUB_WORKSPACE/mamba2_minimal
+          
+          echo "=== Downloaded files ==="
+          ls -la $GITHUB_WORKSPACE/mamba2_minimal/mamba2-minimal-main
 
-      - name: Upload artifact
+      - name: Upload artifact (entire repo)
         uses: actions/upload-artifact@v4
         with:
           name: mamba2-minimal-offline
-          path: $GITHUB_WORKSPACE/mamba2_minimal/*.zip
+          path: $GITHUB_WORKSPACE/mamba2_minimal/mamba2-minimal-main
           if-no-files-found: error
