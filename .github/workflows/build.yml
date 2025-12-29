@@ -39,7 +39,7 @@ jobs:
       - name: Build mamba-ssm wheel
         run: |
           mkdir -p ./dist
-          cd mamba
+          cd mamba-ssm
           python -m pip wheel . \
             --no-build-isolation \
             --no-cache-dir \
