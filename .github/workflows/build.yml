@@ -1,82 +1,72 @@
-name: Build mamba-ssm CPU Wheel (Mamba-2)
+name: Build mamba-ssm Wheel
 
 on:
-  workflow_dispatch:  # 수동 실행
+  workflow_dispatch:  # 수동 실행 가능
 
 jobs:
   build-wheel:
     runs-on: ubuntu-22.04
 
     env:
-      MAMBA_FORCE_BUILD: 1
-      MAMBA_SKIP_CUDA_BUILD: 1   # CPU-only 빌드 (GLIBC 문제 회피)
+      MAMBA_FORCE_CPU: 1
+      MAMBA_SKIP_CUDA_BUILD: 1
       PIP_NO_BUILD_ISOLATION: 1
 
     steps:
-      # 1️⃣ 올바른 원본 리포지토리 체크아웃 (state-spaces/mamba)
-      - name: Checkout state-spaces/mamba
-        uses: actions/checkout@v4
+      # 1️⃣ Checkout repository (서브모듈 포함)
+      - name: Checkout code
+        uses: actions/checkout@v3
         with:
-          repository: state-spaces/mamba   # ← 여기! 핵심 수정
-          ref: main
-          submodules: recursive
+          submodules: recursive  # 서브모듈도 포함
 
-      # 2️⃣ 디버깅: 디렉토리 구조 확인 (mamba_ssm이 보이는지 확인)
+      # 2️⃣ Show repo structure for debugging
       - name: Show repo structure
         run: |
           echo "=== Root directory ==="
           ls -la
-          echo "=== Recursive listing (mamba_ssm 확인) ==="
-          ls -R | grep mamba_ssm
+          echo "=== Recursive listing ==="
+          ls -R
 
-      # 3️⃣ Python 3.9 설정
+      # 3️⃣ Setup Python 3.9
       - name: Setup Python 3.9
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      # 4️⃣ pip 등 업그레이드
-      - name: Upgrade pip and tools
+      # 4️⃣ Upgrade pip, setuptools, wheel
+      - name: Upgrade pip and setuptools
         run: |
           python -m pip install --upgrade pip setuptools wheel
 
-      # 5️⃣ 빌드 의존성 (CPU-only torch)
+      # 5️⃣ Install build dependencies (numpy + CPU torch)
       - name: Install build dependencies
         run: |
           python -m pip install numpy
-          python -m pip install torch==2.1.2+cpu torchvision==0.16.2+cpu torchaudio==2.1.2+cpu --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install torch==2.1.2+cpu --index-url https://download.pytorch.org/whl/cpu
 
-      # 6️⃣ mamba-ssm wheel 빌드
+      # 6️⃣ Build mamba-ssm wheel
       - name: Build mamba-ssm wheel
         run: |
+          # ✅ 안전하게 작업 공간 안에 dist 생성
           mkdir -p $GITHUB_WORKSPACE/dist
-          
-          MAMBA_DIR="$GITHUB_WORKSPACE/mamba_ssm"
-          
+
+          # ✅ mamba-ssm 소스 위치 명시적 경로로 변경
+          MAMBA_DIR="$GITHUB_WORKSPACE/mamba-ssm"  # 여기 경로를 명시적으로 지정
+
           if [ ! -d "$MAMBA_DIR" ]; then
-            echo "Error: mamba_ssm not found!"
-            ls -la $GITHUB_WORKSPACE
+            echo "Error: mamba-ssm directory not found at $MAMBA_DIR!"
             exit 1
           fi
-          
-          echo "Building from: $MAMBA_DIR"
+
+          echo "mamba-ssm found at: $MAMBA_DIR"
           cd "$MAMBA_DIR"
-          
+
+          # ✅ Wheel 빌드
           python -m pip wheel . \
             --no-build-isolation \
             --no-cache-dir \
-            --wheel-dir $GITHUB_WORKSPACE/dist
+            -w $GITHUB_WORKSPACE/dist
 
-      # 7️⃣ wheel 파일 확인
+      # 7️⃣ Show output wheel files
       - name: List built wheels
-        run: |
-          echo "=== Built wheels ==="
-          ls -la $GITHUB_WORKSPACE/dist
-
-      # 8️⃣ Artifact 업로드
-      - name: Upload wheel artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: mamba-ssm-cpu-wheel
-          path: $GITHUB_WORKSPACE/dist/*.whl
-          if-no-files-found: error
+        run: ls -l $GITHUB_WORKSPACE/dist
