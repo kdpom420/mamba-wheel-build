@@ -36,10 +36,12 @@ jobs:
           python -m pip install torch==2.1.2+cpu --index-url https://download.pytorch.org/whl/cpu
 
       # 5. Build mamba-ssm wheel
+      - name: show repo structure
+        run: ls -la
       - name: Build mamba-ssm wheel
         run: |
           mkdir -p ./dist
-          cd mamba-ssm
+          cd ./mamba-ssm
           python -m pip wheel . \
             --no-build-isolation \
             --no-cache-dir \
