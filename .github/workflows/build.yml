@@ -12,13 +12,13 @@ jobs:
 
       - name: Pull RHEL8 CUDA image
         run: |
-          docker pull nvidia/cuda:12.3.2-devel-rhel8
+          docker pull nvidia/cuda:12.3.2-devel-ubi8
 
       - name: Build wheel in RHEL8 container
         run: |
           docker run --rm \
             -v ${{ github.workspace }}:/work \
-            nvidia/cuda:12.3.2-devel-rhel8 \
+            nvidia/cuda:12.3.2-devel-ubi8 \
             bash -c "
               dnf install -y python3.10 python3.10-devel git gcc gcc-c++ make cmake &&
               python3.10 -m ensurepip &&
