@@ -11,19 +11,20 @@ jobs:
       - name: Create directory
         run: mkdir -p $GITHUB_WORKSPACE/mamba2_minimal
 
-      - name: Download mamba2-minimal repo as zip
+      - name: Download and unzip mamba2-minimal repo
         run: |
           wget -O $GITHUB_WORKSPACE/mamba2_minimal/mamba2-minimal.zip \
             https://github.com/tommyip/mamba2-minimal/archive/refs/heads/main.zip
           
           unzip $GITHUB_WORKSPACE/mamba2_minimal/mamba2-minimal.zip -d $GITHUB_WORKSPACE/mamba2_minimal
           
-          echo "=== Downloaded files ==="
+          echo "=== Extracted files ==="
           ls -la $GITHUB_WORKSPACE/mamba2_minimal/mamba2-minimal-main
 
-      - name: Upload artifact (entire repo)
+      # 핵심 수정: 디렉토리 전체를 업로드 (재귀적으로 모든 파일 포함)
+      - name: Upload entire repo as artifact
         uses: actions/upload-artifact@v4
         with:
           name: mamba2-minimal-offline
-          path: $GITHUB_WORKSPACE/mamba2_minimal/mamba2-minimal-main
+          path: $GITHUB_WORKSPACE/mamba2_minimal/mamba2-minimal-main/**
           if-no-files-found: error
