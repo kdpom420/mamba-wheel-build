@@ -50,11 +50,11 @@ jobs:
           # ✅ 안전하게 작업 공간 안에 dist 생성
           mkdir -p $GITHUB_WORKSPACE/dist
 
-          # ✅ mamba-ssm 소스 위치 탐색
-          MAMBA_DIR=$(find $GITHUB_WORKSPACE -type d -name "mamba-ssm" -print -quit)
+          # ✅ mamba-ssm 소스 위치 명시적 경로로 변경
+          MAMBA_DIR="$GITHUB_WORKSPACE/mamba-ssm"  # 여기 경로를 명시적으로 지정
 
-          if [ -z "$MAMBA_DIR" ]; then
-            echo "Error: mamba-ssm directory not found!"
+          if [ ! -d "$MAMBA_DIR" ]; then
+            echo "Error: mamba-ssm directory not found at $MAMBA_DIR!"
             exit 1
           fi
 
