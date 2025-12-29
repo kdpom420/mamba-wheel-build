@@ -38,12 +38,12 @@ jobs:
       # 5. Build mamba-ssm wheel
       - name: Build mamba-ssm wheel
         run: |
-          mkdir -p /work/dist
+          mkdir -p ./dist
           cd mamba
           python -m pip wheel . \
             --no-build-isolation \
             --no-cache-dir \
-            -w /work/dist
+            -w ../dist
 
       # 6. Show output wheel files
       - name: List built wheels
