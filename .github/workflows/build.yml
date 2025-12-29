@@ -24,16 +24,23 @@ jobs:
                              gcc gcc-c++ make cmake &&
               python3.9 -m ensurepip &&
               python3.9 -m pip install --upgrade pip setuptools wheel
+              
+              # torch CUDA 계열 삭제
+              python3.9 -m pip uninstall -y torch nvidia-cudnn-cu12 nvidia-nccl-cu12 nvidia-cublas-cu12
+
+              
 
               # torch CPU 버전
               python3.9 -m pip install \
-                torch==2.1.2+cpu \
-                --index-url https://download.pytorch.org/whl/cpu
+              torch==2.1.2+cpu \
+              --index-url https://download.pytorch.org/whl/cpu \
+              --no-cache-dir
+
               
               # mamba 빌드
               git clone https://github.com/state-spaces/mamba.git
               cd mamba
-              
+              export PIP_NO_BUILD_ISOLATION=1
               python3.9 -m pip wheel . \
                 --no-build-isolation \
                 --no-cache-dir \
