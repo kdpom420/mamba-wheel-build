@@ -1,7 +1,7 @@
 name: Build mamba-ssm Wheel
 
 on:
-  workflow_dispatch:  # 수동 실행 시 트리거
+  workflow_dispatch:  # 수동 실행 가능
 
 jobs:
   build-wheel:
@@ -17,12 +17,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          submodules: recursive  # 서브모듈도 함께 체크아웃
+          submodules: recursive  # 서브모듈도 포함
 
       # 2️⃣ Show repo structure for debugging
       - name: Show repo structure
         run: |
-          ls -R  # 레포 구조 확인
+          echo "=== Root directory ==="
+          ls -la
+          echo "=== Recursive listing ==="
+          ls -R
 
       # 3️⃣ Setup Python 3.9
       - name: Setup Python 3.9
@@ -30,7 +33,7 @@ jobs:
         with:
           python-version: '3.9'
 
-      # 4️⃣ Upgrade pip & setuptools
+      # 4️⃣ Upgrade pip, setuptools, wheel
       - name: Upgrade pip and setuptools
         run: |
           python -m pip install --upgrade pip setuptools wheel
@@ -44,14 +47,26 @@ jobs:
       # 6️⃣ Build mamba-ssm wheel
       - name: Build mamba-ssm wheel
         run: |
-          mkdir -p ./dist
-          # 현재 `mamba-ssm`이 어디에 있는지 확인 후, 그 경로로 이동
-          cd $(find . -type d -name "mamba-ssm" -print -quit)   # mamba-ssm 디렉토리로 이동
+          # ✅ 안전하게 작업 공간 안에 dist 생성
+          mkdir -p $GITHUB_WORKSPACE/dist
+
+          # ✅ mamba-ssm 소스 위치 탐색
+          MAMBA_DIR=$(find $GITHUB_WORKSPACE -type d -name "mamba-ssm" -print -quit)
+
+          if [ -z "$MAMBA_DIR" ]; then
+            echo "Error: mamba-ssm directory not found!"
+            exit 1
+          fi
+
+          echo "mamba-ssm found at: $MAMBA_DIR"
+          cd "$MAMBA_DIR"
+
+          # ✅ Wheel 빌드
           python -m pip wheel . \
             --no-build-isolation \
             --no-cache-dir \
-            -w ../dist
+            -w $GITHUB_WORKSPACE/dist
 
       # 7️⃣ Show output wheel files
       - name: List built wheels
-        run: ls -l ./dist
+        run: ls -l $GITHUB_WORKSPACE/dist
