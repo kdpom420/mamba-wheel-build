@@ -1,0 +1,37 @@
+name: build-mamba-ssm-wheel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pull RHEL8 CUDA image
+        run: |
+          docker pull nvidia/cuda:12.3.2-devel-rhel8
+
+      - name: Build wheel in RHEL8 container
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/work \
+            nvidia/cuda:12.3.2-devel-rhel8 \
+            bash -c "
+              dnf install -y python3.10 python3.10-devel git gcc gcc-c++ make cmake &&
+              python3.10 -m ensurepip &&
+              python3.10 -m pip install --upgrade pip setuptools wheel &&
+              python3.10 -m pip install torch --index-url https://download.pytorch.org/whl/cu121 &&
+              git clone https://github.com/state-spaces/mamba.git &&
+              cd mamba &&
+              python3.10 -m pip wheel . -w /work/dist
+            "
+
+      - name: Upload wheel
+        uses: actions/upload-artifact@v4
+        with:
+          name: mamba-ssm-wheel
+          path: dist/*.whl
+
