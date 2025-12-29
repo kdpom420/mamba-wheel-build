@@ -14,20 +14,22 @@ jobs:
         run: |
           docker pull nvidia/cuda:12.3.2-devel-ubi8
 
-      - name: Build wheel in RHEL8 container
+      - name: Build wheel in UBI8 container
         run: |
           docker run --rm \
             -v ${{ github.workspace }}:/work \
-            nvidia/cuda:12.3.2-devel-ubi8 \
+            nvidia/cuda:12.3.1-devel-ubi8 \
             bash -c "
-              dnf install -y python3.10 python3.10-devel git gcc gcc-c++ make cmake &&
-              python3.10 -m ensurepip &&
-              python3.10 -m pip install --upgrade pip setuptools wheel &&
-              python3.10 -m pip install torch --index-url https://download.pytorch.org/whl/cu121 &&
+              dnf install -y python39 python39-devel git \
+                             gcc gcc-c++ make cmake &&
+              python3.9 -m ensurepip &&
+              python3.9 -m pip install --upgrade pip setuptools wheel &&
+              python3.9 -m pip install torch --index-url https://download.pytorch.org/whl/cu121 &&
               git clone https://github.com/state-spaces/mamba.git &&
               cd mamba &&
-              python3.10 -m pip wheel . -w /work/dist
+              python3.9 -m pip wheel . -w /work/dist
             "
+
 
       - name: Upload wheel
         uses: actions/upload-artifact@v4
