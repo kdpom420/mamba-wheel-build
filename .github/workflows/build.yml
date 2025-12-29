@@ -33,7 +33,11 @@ jobs:
               # mamba 빌드
               git clone https://github.com/state-spaces/mamba.git
               cd mamba
-              python3.9 -m pip wheel . -w /work/dist
+              
+              python3.9 -m pip wheel . \
+                --no-build-isolation \
+                --no-cache-dir \
+                -w /work/dist
             "
 
 
