@@ -1,47 +1,47 @@
-name: Download mamba-ssm Prebuilt Wheel
+name: Download mamba-ssm Prebuilt Wheels (Offline Install)
 
 on:
   workflow_dispatch:  # 수동 실행
 
 jobs:
-  download-wheel:
+  download-wheels:
     runs-on: ubuntu-22.04
 
     steps:
-      # 1️⃣ 작업 디렉토리 설정
-      - name: Set up workspace
-        run: |
-          mkdir -p $GITHUB_WORKSPACE/wheels
+      # 1️⃣ 작업 디렉토리 준비
+      - name: Create wheels directory
+        run: mkdir -p $GITHUB_WORKSPACE/wheels
 
-      # 2️⃣ Python 설정 (임시 env 위해)
-      - name: Setup Python
+      # 2️⃣ Python & torch 설치 (torch 버전 확인용)
+      - name: Setup Python 3.9
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
 
-      # 3️⃣ mamba-ssm 설치 (prebuilt wheel 자동 다운로드)
-      - name: Install mamba-ssm (downloads prebuilt wheel)
+      - name: Install torch (to check version)
         run: |
-          python -m pip install --no-deps --target $GITHUB_WORKSPACE/wheels mamba-ssm
-          python -m pip install --no-deps --target $GITHUB_WORKSPACE/wheels causal-conv1d  # 의존성
+          python -m pip install torch==2.1.2+cpu --index-url https://download.pytorch.org/whl/cpu
 
-      # 4️⃣ 다운로드된 wheel 확인 및 복사
-      - name: Find and copy wheels
+      # 3️⃣ torch 버전 확인 & wheel URL 결정 (최신 예시, 필요시 수정)
+      - name: Download compatible prebuilt wheels
         run: |
-          echo "=== Downloaded wheels in pip cache ==="
-          ls -la ~/.cache/pip/wheels/*.whl || echo "No wheels in cache"
+          TORCH_VERSION=$(python -c "import torch; print(torch.__version__)")
+          echo "Torch version: $TORCH_VERSION"
           
-          # pip cache에서 wheel 복사 (prebuilt가 cache에 저장됨)
-          cp ~/.cache/pip/wheels/mamba_ssm*.whl $GITHUB_WORKSPACE/wheels/ || echo "mamba_ssm wheel not found"
-          cp ~/.cache/pip/wheels/causal_conv1d*.whl $GITHUB_WORKSPACE/wheels/ || echo "causal_conv1d wheel not found"
+          # 예시: torch 2.1.x 용 wheel (A100 호환 cu118 추천, CPU fallback 가능)
+          # 최신 확인: https://github.com/state-spaces/mamba/releases/latest 의 Assets 보기
+          wget -O $GITHUB_WORKSPACE/wheels/mamba_ssm.whl https://github.com/state-spaces/mamba/releases/download/v2.2.6/mamba_ssm-2.2.6+cu118torch2.1cxx11abiTRUE-cp39-cp39-linux_x86_64.whl
           
-          echo "=== Final wheels directory ==="
+          # causal-conv1d도 함께 (의존성, 최신 맞춰서)
+          wget -O $GITHUB_WORKSPACE/wheels/causal_conv1d.whl https://github.com/Dao-AILab/causal-conv1d/releases/download/v1.4.0/causal_conv1d-1.4.0+cu118torch2.1cxx11abiTRUE-cp39-cp39-linux_x86_64.whl
+          
+          echo "=== Downloaded wheels ==="
           ls -la $GITHUB_WORKSPACE/wheels
 
-      # 5️⃣ Artifact 업로드 (다운로드 가능)
+      # 4️⃣ Artifact 업로드
       - name: Upload wheels artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mamba-ssm-wheels
+          name: mamba-ssm-offline-wheels
           path: $GITHUB_WORKSPACE/wheels/*.whl
           if-no-files-found: error
