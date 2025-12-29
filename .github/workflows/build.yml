@@ -1,31 +1,33 @@
-name: Build mamba-ssm CPU Wheel
+name: Build mamba-ssm CPU Wheel (Mamba-2)
 
 on:
-  workflow_dispatch:  # 수동으로 실행 가능
+  workflow_dispatch:  # 수동 실행
 
 jobs:
   build-wheel:
-    runs-on: ubuntu-22.04  # ubuntu-20.04는 2025년 4월에 완전 제거됨
+    runs-on: ubuntu-22.04
 
     env:
-      MAMBA_FORCE_BUILD: 1       # prebuilt wheel 무시하고 강제 빌드
-      MAMBA_SKIP_CUDA_BUILD: 1   # CUDA 커널 컴파일 스킵 → CPU-only (GLIBC 의존성 최소화)
+      MAMBA_FORCE_BUILD: 1
+      MAMBA_SKIP_CUDA_BUILD: 1   # CPU-only 빌드 (GLIBC 문제 회피)
       PIP_NO_BUILD_ISOLATION: 1
 
     steps:
-      # 1️⃣ 리포지토리 체크아웃 (서브모듈 포함)
-      - name: Checkout code
+      # 1️⃣ 올바른 원본 리포지토리 체크아웃 (state-spaces/mamba)
+      - name: Checkout state-spaces/mamba
         uses: actions/checkout@v4
         with:
+          repository: state-spaces/mamba   # ← 여기! 핵심 수정
+          ref: main
           submodules: recursive
 
-      # 2️⃣ 디버깅용: 리포지토리 구조 확인
+      # 2️⃣ 디버깅: 디렉토리 구조 확인 (mamba_ssm이 보이는지 확인)
       - name: Show repo structure
         run: |
           echo "=== Root directory ==="
           ls -la
-          echo "=== Recursive listing ==="
-          ls -R
+          echo "=== Recursive listing (mamba_ssm 확인) ==="
+          ls -R | grep mamba_ssm
 
       # 3️⃣ Python 3.9 설정
       - name: Setup Python 3.9
@@ -33,12 +35,12 @@ jobs:
         with:
           python-version: '3.9'
 
-      # 4️⃣ pip, setuptools, wheel 업그레이드
+      # 4️⃣ pip 등 업그레이드
       - name: Upgrade pip and tools
         run: |
           python -m pip install --upgrade pip setuptools wheel
 
-      # 5️⃣ 빌드 의존성 설치 (numpy + CPU-only torch)
+      # 5️⃣ 빌드 의존성 (CPU-only torch)
       - name: Install build dependencies
         run: |
           python -m pip install numpy
@@ -47,38 +49,34 @@ jobs:
       # 6️⃣ mamba-ssm wheel 빌드
       - name: Build mamba-ssm wheel
         run: |
-          # dist 디렉토리 생성
           mkdir -p $GITHUB_WORKSPACE/dist
-
-          # mamba_ssm 디렉토리 경로 명시 (underscore 주의!)
+          
           MAMBA_DIR="$GITHUB_WORKSPACE/mamba_ssm"
           
           if [ ! -d "$MAMBA_DIR" ]; then
-            echo "Error: mamba_ssm directory not found at $MAMBA_DIR!"
-            echo "Available directories:"
+            echo "Error: mamba_ssm not found!"
             ls -la $GITHUB_WORKSPACE
             exit 1
           fi
           
-          echo "mamba_ssm found at: $MAMBA_DIR"
+          echo "Building from: $MAMBA_DIR"
           cd "$MAMBA_DIR"
           
-          # wheel 빌드
           python -m pip wheel . \
             --no-build-isolation \
             --no-cache-dir \
             --wheel-dir $GITHUB_WORKSPACE/dist
 
-      # 7️⃣ 빌드된 wheel 목록 확인
+      # 7️⃣ wheel 파일 확인
       - name: List built wheels
         run: |
           echo "=== Built wheels ==="
           ls -la $GITHUB_WORKSPACE/dist
 
-      # 8️⃣ Artifact로 wheel 업로드 (다운로드 쉽게)
+      # 8️⃣ Artifact 업로드
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
         with:
           name: mamba-ssm-cpu-wheel
           path: $GITHUB_WORKSPACE/dist/*.whl
-          if-no-files-found: error  # wheel이 없으면 job 실패
+          if-no-files-found: error
