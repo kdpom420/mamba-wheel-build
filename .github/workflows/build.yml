@@ -23,10 +23,16 @@ jobs:
               dnf install -y python39 python39-devel git \
                              gcc gcc-c++ make cmake &&
               python3.9 -m ensurepip &&
-              python3.9 -m pip install --upgrade pip setuptools wheel &&
-              python3.9 -m pip install torch --index-url https://download.pytorch.org/whl/cu121 &&
-              git clone https://github.com/state-spaces/mamba.git &&
-              cd mamba &&
+              python3.9 -m pip install --upgrade pip setuptools wheel
+
+              # torch CPU 버전
+              python3.9 -m pip install \
+                torch==2.1.2+cpu \
+                --index-url https://download.pytorch.org/whl/cpu
+              
+              # mamba 빌드
+              git clone https://github.com/state-spaces/mamba.git
+              cd mamba
               python3.9 -m pip wheel . -w /work/dist
             "
 
