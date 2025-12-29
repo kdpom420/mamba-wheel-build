@@ -1,37 +1,27 @@
-name: Download mamba-ssm Prebuilt Wheels (Offline Install)
+name: Download Mamba-2 Minimal (Pure PyTorch, Offline Install)
 
 on:
   workflow_dispatch:  # 수동 실행
 
 jobs:
-  download-wheels:
+  download-mamba2-minimal:
     runs-on: ubuntu-22.04
 
     steps:
-      # 1️⃣ wheels 디렉토리 생성
-      - name: Create wheels directory
-        run: mkdir -p $GITHUB_WORKSPACE/wheels
+      - name: Create directory
+        run: mkdir -p $GITHUB_WORKSPACE/mamba2_minimal
 
-      # 2️⃣ 실제 존재하는 prebuilt wheel 다운로드 (Python 3.9 cp39 호환)
-      - name: Download mamba-ssm and causal-conv1d wheels
+      - name: Download mamba2-minimal repo as zip
         run: |
-          # mamba_ssm: cp39, cu11, torch2.4, cxx11abiTRUE (A100 호환 최고)
-          wget -O $GITHUB_WORKSPACE/wheels/mamba_ssm-2.2.6.post3-cp39.whl \
-            https://github.com/state-spaces/mamba/releases/download/v2.2.6.post3/mamba_ssm-2.2.6.post3+cu11torch2.4cxx11abiTRUE-cp39-cp39-linux_x86_64.whl
+          wget -O $GITHUB_WORKSPACE/mamba2_minimal/mamba2-minimal.zip \
+            https://github.com/tommyip/mamba2-minimal/archive/refs/heads/main.zip
           
-          # causal-conv1d: cp39, cu11, torch2.4 (의존성, optional but 추천)
-          wget -O $GITHUB_WORKSPACE/wheels/causal_conv1d-1.5.4-cp39.whl \
-            https://github.com/Dao-AILab/causal-conv1d/releases/download/v1.5.4/causal_conv1d-1.5.4+cu11torch2.4cxx11abiTRUE-cp39-cp39-linux_x86_64.whl
-          
-          # 다운로드 성공 확인
-          echo "=== Downloaded wheels ==="
-          ls -lh $GITHUB_WORKSPACE/wheels
-          sha256sum $GITHUB_WORKSPACE/wheels/*.whl  # checksum 확인용
+          echo "=== Downloaded file ==="
+          ls -la $GITHUB_WORKSPACE/mamba2_minimal
 
-      # 3️⃣ Artifact 업로드
-      - name: Upload wheels artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mamba-ssm-offline-wheels-cp39
-          path: $GITHUB_WORKSPACE/wheels/*.whl
+          name: mamba2-minimal-offline
+          path: $GITHUB_WORKSPACE/mamba2_minimal/*.zip
           if-no-files-found: error
