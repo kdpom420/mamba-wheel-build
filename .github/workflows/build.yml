@@ -1,14 +1,13 @@
 name: Build mamba-ssm Wheel
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:  # 수동 실행 시 트리거
 
 jobs:
   build-wheel:
     runs-on: ubuntu-22.04
 
     env:
-      # CPU-only 빌드 강제, CUDA 탐지 방지
       MAMBA_FORCE_CPU: 1
       MAMBA_SKIP_CUDA_BUILD: 1
       PIP_NO_BUILD_ISOLATION: 1
@@ -18,11 +17,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          submodules: recursive
+          submodules: recursive  # 서브모듈도 함께 체크아웃
 
       # 2️⃣ Show repo structure for debugging
       - name: Show repo structure
-        run: ls -la
+        run: |
+          ls -R  # 레포 구조 확인
 
       # 3️⃣ Setup Python 3.9
       - name: Setup Python 3.9
@@ -45,13 +45,12 @@ jobs:
       - name: Build mamba-ssm wheel
         run: |
           mkdir -p ./dist
-          # 실제 소스 경로 확인 후 이동
-          # repo 루트에 setup.py / pyproject.toml 있으면 그냥 '.'
-          cd .   # 또는 cd <path_to_mamba_ssm_source>
+          # 현재 `mamba-ssm`이 어디에 있는지 확인 후, 그 경로로 이동
+          cd $(find . -type d -name "mamba-ssm" -print -quit)   # mamba-ssm 디렉토리로 이동
           python -m pip wheel . \
             --no-build-isolation \
             --no-cache-dir \
-            -w ./dist
+            -w ../dist
 
       # 7️⃣ Show output wheel files
       - name: List built wheels
