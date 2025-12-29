@@ -70,9 +70,10 @@ jobs:
 
             echo '== Build wheel =='
             python3.9 -m pip wheel . \
-              --no-cache-dir \
-              -w /work/dist
-
+            --no-build-isolation \
+            --no-use-pep517 \
+            --no-cache-dir \
+            -w /work/dist
             echo '== Done =='
             ls -lh /work/dist
           "
