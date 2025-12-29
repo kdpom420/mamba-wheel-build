@@ -8,24 +8,24 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      # 1️⃣ 작업 디렉토리 준비
+      # 1️⃣ wheels 디렉토리 생성
       - name: Create wheels directory
         run: mkdir -p $GITHUB_WORKSPACE/wheels
 
-      # 2️⃣ 최신 prebuilt wheel 직접 다운로드 (v2.2.6.post3, cp39 for Python 3.9)
+      # 2️⃣ 실제 존재하는 prebuilt wheel 다운로드 (v2.2.6.post3, cp39 for Python 3.9)
       - name: Download mamba-ssm and causal-conv1d wheels
         run: |
-          # mamba_ssm 최신 wheel (torch 2.4, cu11, cp39)
-          wget -O $GITHUB_WORKSPACE/wheels/mamba_ssm.whl https://github.com/state-spaces/mamba/releases/download/v2.2.6.post3/mamba_ssm-2.2.6.post3+cu11torch2.4cxx11abiFALSE-cp39-cp39-linux_x86_64.whl
+          # mamba_ssm wheel (cu118 + torch2.4, A100 잘 동작, GLIBC ubuntu-22 수준)
+          wget -O $GITHUB_WORKSPACE/wheels/mamba_ssm.whl https://github.com/state-spaces/mamba/releases/download/v2.2.6.post3/mamba_ssm-2.2.6.post3+cu118torch2.4cxx11abiFALSE-cp39-cp39-linux_x86_64.whl
           
-          # causal-conv1d 최신 wheel (v1.5.4 기준, 호환되는 것 – 필요시 최신 확인)
-          wget -O $GITHUB_WORKSPACE/wheels/causal_conv1d.whl https://github.com/Dao-AILab/causal-conv1d/releases/download/v1.5.4/causal_conv1d-1.5.4+cu11torch2.4cxx11abiFALSE-cp39-cp39-linux_x86_64.whl
+          # causal-conv1d wheel (최신 릴리스에서 별도 필요 없지만 안전하게 추가, 호환 버전)
+          wget -O $GITHUB_WORKSPACE/wheels/causal_conv1d.whl https://github.com/Dao-AILab/causal-conv1d/releases/download/v1.4.0/causal_conv1d-1.4.0+cu118torch2.1cxx11abiFALSE-cp39-cp39-linux_x86_64.whl
           
           # 다운로드 확인
-          echo "=== Downloaded wheels ==="
+          echo "=== Downloaded files ==="
           ls -la $GITHUB_WORKSPACE/wheels
 
-      # 3️⃣ Artifact 업로드
+      # 3️⃣ Artifact 업로드 (파일 없으면 오류)
       - name: Upload wheels artifact
         uses: actions/upload-artifact@v4
         with:
